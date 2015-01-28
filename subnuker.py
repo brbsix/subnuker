@@ -2,26 +2,158 @@
 """Scan for and remove advertising from SRT subtitle files and/or folders"""
 
 
+import os
+import sys
+
+
 class Config:   # pylint: disable=R0903
     """Store global script configuration values."""
 
     charfixes = {'¶': '♪'}
     patterns = []
-    program = 'subnuker'
+    program = os.path.splitext(os.path.basename(__file__))[0]
     results = False
     regex = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
-             r'(?<!\.)\.com', r'(?<!\.)\.net', r'(?<!\.)\.org', 'air date', 'caption', 'download',
-             'subtitle', 'sync', r'(?<![A-Za-z0-9])www\.', 'âª']
+             r'(?<!\.)\.com', r'(?<!\.)\.net', r'(?<!\.)\.org',
+             'air date', 'caption', 'download', 'subtitle', 'sync',
+             r'(?<![A-Za-z0-9])www\.', 'âª']
     terms = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              '.com', '.net', '.org', 'air date', 'caption', 'download',
              'subtitle', 'sync', 'www.', 'âª']
     version = '0.1.dev1'
 
 
-class SubtitleFile:
-    """Process individual subtitle file."""
+class AeidonProject:
+    """Process individual subtitle files with python3-aeidon."""
+    def __init__(self, filename, options):
+        try:
+            import aeidon
+        except ImportError:
+            prerequisites()
+            sys.exit(1)
+
+        self.filename = filename
+        self.options = options
+        self.project = aeidon.Project()  # pylint: disable=W0201
+
+        self.open()
+
+        self.fixchars()
+
+        matches = self.search()
+
+        if matches:
+            Config.results = True
+            deletions = self.prompt(matches)
+            if deletions:
+                self.project.remove_subtitles(deletions)
+
+        if self.modified:
+            self.save()
+
+    def fixchars(self):
+        """Replace characters or strings within subtitle file."""
+        for key in Config.charfixes:
+            self.project.set_search_string(key)
+            self.project.set_search_replacement(Config.charfixes[key])
+            self.project.replace_all()
+
+    @property
+    def modified(self):
+        """Check whether subtitle file has been modified."""
+        return True if self.project.main_changed > 0 else False
+
+    def open(self):
+        """Open the subtitle file into an Aeidon project."""
+        try:
+            self.project.open_main(self.filename)
+        except UnicodeDecodeError:
+            from chardet import detect
+            encoding = detect(open(self.filename, 'rb').read()).get('encoding')
+            try:
+                self.project.open_main(self.filename, encoding)
+            except UnicodeDecodeError:
+                error("'%s' encountered a fatal encoding error" % self.filename)
+                sys.exit(1)
+            except:  # pylint: disable=W0702
+                open_error(self.filename)
+        except:  # pylint: disable=W0702
+            open_error(self.filename)
+
+    def prompt(self, matches):
+        """Prompt user to remove cells from subtitle file."""
+
+        if self.options.autoyes:
+            return matches
+
+        deletions = []
+
+        for match in matches:
+            os.system('clear')
+            print(self.project.main_file.read()[match].main_text)
+            print('----------------------------------------')
+            print("Delete cell %s of '%s'?" % (str(match + 1), self.filename))
+            response = getch().lower()
+            if response == 'y':
+                os.system('clear')
+                deletions.append(match)
+            elif response == 'n':
+                os.system('clear')
+            else:
+                if deletions or self.modified:
+                    warning("Not saving changes made to '%s'" % self.filename)
+                sys.exit(0)
+
+        return deletions
+
+    def save(self):
+        """Save subtitle file."""
+        try:
+            self.project.save_main()
+        except:  # pylint: disable=W0702
+            error("Unable to save '%s'" % self.filename)
+            sys.exit(1)
+
+    def search(self):
+        """Search srt in project for cells matching list of terms."""
+
+        matches = []
+        for pattern in Config.patterns:
+            matches += self.termfinder(pattern)
+
+        return sorted(set(matches), key=int)
+
+    def termfinder(self, pattern):
+        """Search srt in project for cells matching term."""
+
+        if self.options.regex:
+            self.project.set_search_regex(pattern)
+        else:
+            self.project.set_search_string(pattern)
+
+        matches = []
+        while True:
+            try:
+                if len(matches) == 0:
+                    matches.append(self.project.find_next()[0])
+                else:
+                    last = matches[-1]
+                    new = self.project.find_next(last + 1)[0]
+                    if new != last and new > last:
+                        matches.append(new)
+                    else:
+                        break
+            except StopIteration:
+                break
+
+        return matches
+
+
+class SrtProject:
+    """Process individual srt files."""
     def __init__(self, filename, options):
         self.filename = filename
+        self.options = options
         self.modified = False
 
         text = self.open()
@@ -31,17 +163,17 @@ class SubtitleFile:
 
         self.cells = self.split(text)
 
-        matches = search(self.cells)
+        matches = self.search()
 
         if matches:
             Config.results = True
-            deletions = self.prompt(matches, options.autoyes)
+            deletions = self.prompt(matches)
             if deletions:
                 self.cells = remove_elements(self.cells, deletions)
                 self.modified = True
 
         if self.modified:
-            save_file(self.filename, self.cells)
+            self.save()
 
     def fixchars(self, text):
         """Find and replace problematic characters."""
@@ -50,7 +182,15 @@ class SubtitleFile:
         fixed = text.translate(str.maketrans(keys, values))
         if fixed != text:
             self.modified = True
-            return fixed
+        return fixed
+
+    def ismatch(self, text, pattern):  # pylint: disable=R0201
+        """Test whether text contains string or matches regex."""
+
+        if hasattr(pattern, 'search'):
+            return pattern.search(text)
+        else:
+            return pattern in text
 
     def open(self):
         """Open the subtitle file (detect encoding if necessary)."""
@@ -66,11 +206,15 @@ class SubtitleFile:
                 return binary.decode(encoding)
             except LookupError:
                 return binary.decode(errors='ignore')
+            except:  # pylint: disable=W0702
+                open_error(self.filename)
+        except:  # pylint: disable=W0702
+            open_error(self.filename)
 
-    def prompt(self, matches, autoyes):
+    def prompt(self, matches):
         """Prompt user to remove cells from subtitle file."""
 
-        if autoyes:
+        if self.options.autoyes:
             return matches
 
         deletions = []
@@ -92,6 +236,35 @@ class SubtitleFile:
                 sys.exit(0)
 
         return deletions
+
+    def save(self):
+        """Format and save cells."""
+
+        # fix the cell numbering
+        for index, cell in enumerate(self.cells):
+            cell_split = cell.split('\n')
+            cell_split[0] = str(index + 1)
+            self.cells[index] = '\n'.join(cell_split)
+
+        # add a newline to the last line if necessary
+        if not self.cells[-1].endswith('\n'):
+            self.cells[-1] += '\n'
+
+        # save the rejoined the list of cells
+        with open(self.filename, 'w') as file_open:
+            file_open.write('\n\n'.join(self.cells))
+
+    def search(self):
+        """Return list of cells to be removed."""
+
+        matches = []
+        for index, cell in enumerate(self.cells):
+            for pattern in Config.patterns:
+                if self.ismatch(cell, pattern):
+                    matches.append(index)
+                    break
+
+        return matches
 
     def split(self, text):
         """Split text into a list of cells."""
@@ -144,40 +317,27 @@ def getch():
         return msvcrt.getwch()
 
 
-def ismatch(text, pattern):
-    """Test whether text contains string or matches regex."""
-
-    if hasattr(pattern, 'search'):
-        return pattern.search(text)
-    else:
-        return pattern in text
-
-
 def main():
     """Start application."""
 
     options, arguments = parse()
-    srts = prep_files(arguments)
 
-    if not srts:
+    if options.aeidon:
+        extensions = ['ass', 'srt', 'ssa', 'sub']
+    else:
+        extensions = ['srt']
+
+    filenames = prep_files(arguments, extensions)
+
+    if not filenames:
         error('No valid targets were specified')
         sys.exit(1)
 
     # load terms from pattern files if necessary
-    if options.termfiles:
-        Config.terms = open_terms(options.termfiles)
+    if options.file:
+        Config.terms = open_terms(options.file)
 
-    # compile regex patterns if necessary
-    if options.regex:
-        if options.termfiles:
-            Config.patterns = prep_regex(Config.terms)
-        else:
-            Config.patterns = prep_regex(Config.regex)
-    else:
-        Config.patterns = Config.terms
-
-    for srt in srts:
-        SubtitleFile(srt, options)
+    process_subtitles(filenames, options)
 
     if not Config.results:
         basenames = [os.path.basename(x) for x in arguments]
@@ -189,6 +349,12 @@ def main():
             sleep(2)
 
 
+def open_error(filename):
+    """Display a generic error message upon failure to open file."""
+    error("Unable to open '%s'" % filename)
+    sys.exit(1)
+
+
 def open_terms(termfiles):
     """Load files passed via options and return list of terms."""
 
@@ -197,7 +363,7 @@ def open_terms(termfiles):
     for termfile in termfiles:
         try:
             terms += [l.rstrip('\n') for l in open(termfile)]
-        except:     # pylint: disable=W0702
+        except:  # pylint: disable=W0702
             error("Unable to load pattern file '%s'" % termfile)
             sys.exit(1)
 
@@ -219,9 +385,14 @@ def parse():
         description="Remove spam and advertising from subtitle files.",
         usage="%(prog)s [options] <srt files>")
     parser.add_argument(
+        "-a", "--aeidon",
+        action="store_true",
+        dest="aeidon",
+        help="use python3-aeidon to process subtitles")
+    parser.add_argument(
         "-f", "--file",
         action="append",
-        dest="termfiles",
+        dest="file",
         help="obtain match terms from FILE")
     parser.add_argument(
         "-g", "--gui",
@@ -233,7 +404,7 @@ def parse():
         action="help",
         help=argparse.SUPPRESS)
     parser.add_argument(
-        "--regex",
+        "-r", "--regex",
         action="store_true",
         dest="regex",
         help="indicate use of regex matches")
@@ -254,15 +425,22 @@ def parse():
 
     options = parser.parse_args()
     arguments = options.targets[0]
+
     return options, arguments
 
 
-def prep_files(paths):
+def prep_files(paths, aeidon):
     """Parses `paths` (which may consist of files and/or directories).
     Removes duplicates, sorts, and returns verified srt files."""
 
     from batchpath import GeneratePaths
-    return GeneratePaths().files(paths, os.W_OK, ['srt'], 0, True)
+
+    if aeidon:
+        extensions = ['ass', 'srt', 'ssa', 'sub']
+    else:
+        extensions = ['srt']
+
+    return GeneratePaths().files(paths, os.W_OK, extensions, 0, True)
 
 
 def prep_regex(patterns):
@@ -270,6 +448,44 @@ def prep_regex(patterns):
 
     import re
     return [re.compile(pattern) for pattern in patterns]
+
+
+def prerequisites():
+    """Display information about obtaining the aeidon module."""
+    url = "http://home.gna.org/gaupol/download.html"
+    debian = "sudo apt-get install python3-aeidon"
+    other = "python3 setup.py --without-gaupol clean install"
+
+    error("The aeidon module is missing!")
+    stderr("\nTry '{0}' or the appropriate command for your package manager."
+           .format(debian))
+    stderr("\nYou can also download the tarball for gaupol @ {0} which "
+           "includes aeidon. After downloading, unpack and run '{1}'."
+           .format(url, other))
+
+
+def process_subtitles(filenames, options):
+    """Process subtitles as indicated per options."""
+
+    if options.aeidon:
+        if options.regex:
+            Config.patterns = Config.regex
+        else:
+            Config.patterns = Config.terms
+        for filename in filenames:
+            AeidonProject(filename, options)
+    else:
+        # compile regex patterns if necessary
+        if options.regex:
+            if options.files:
+                Config.patterns = prep_regex(Config.terms)
+            else:
+                Config.patterns = prep_regex(Config.regex)
+        else:
+            Config.patterns = Config.terms
+
+        for filename in filenames:
+            SrtProject(filename, options)
 
 
 def remove_elements(target, indices):
@@ -281,7 +497,7 @@ def remove_elements(target, indices):
 
     copied = list(target)
 
-    for index in sorted(indices, reverse=True):
+    for index in reversed(indices):
         del copied[index]
     return copied
 
@@ -291,35 +507,9 @@ def remove_elements(target, indices):
 #     return [e for i, e in enumerate(target) if i not in indices]
 
 
-def save_file(filename, cells):
-    """Format and save cells."""
-
-    # fix the cell numbering
-    for index, cell in enumerate(cells):
-        cell_split = cell.split('\n')
-        cell_split[0] = str(index + 1)
-        cells[index] = '\n'.join(cell_split)
-
-    # add a newline to the last line if necessary
-    if not cells[-1].endswith('\n'):
-        cells[-1] += '\n'
-
-    # save the rejoined the list of cells
-    with open(filename, 'w') as file_open:
-        file_open.write('\n\n'.join(cells))
-
-
-def search(cells):
-    """Return list of cells to be removed."""
-
-    matches = []
-    for index, cell in enumerate(cells):
-        for pattern in Config.patterns:
-            if ismatch(cell, pattern):
-                matches.append(index)
-                break
-
-    return matches
+def stderr(*objs):
+    """Print message to stderr."""
+    print(*objs, file=sys.stderr)
 
 
 def warning(*objs):
@@ -327,9 +517,6 @@ def warning(*objs):
 
     print('WARNING:', *objs, file=sys.stderr)
 
-
-import os
-import sys
 
 if __name__ == '__main__':
     main()
