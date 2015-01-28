@@ -18,6 +18,94 @@ class Config:   # pylint: disable=R0903
     version = '0.1.dev1'
 
 
+class SubtitleFile:
+    """Process individual subtitle file."""
+    def __init__(self, filename, options):
+        self.filename = filename
+        self.modified = False
+
+        text = self.open()
+
+        if Config.charfixes:
+            text = self.fixchars(text)
+
+        self.cells = self.split(text)
+
+        matches = search(self.cells)
+
+        if matches:
+            Config.results = True
+            deletions = self.prompt(matches, options.autoyes)
+            if deletions:
+                self.cells = remove_elements(self.cells, deletions)
+                self.modified = True
+
+        if self.modified:
+            save_file(self.filename, self.cells)
+
+    def fixchars(self, text):
+        """Find and replace problematic characters."""
+        keys = ''.join(Config.charfixes.keys())
+        values = ''.join(Config.charfixes.values())
+        fixed = text.translate(str.maketrans(keys, values))
+        if fixed != text:
+            self.modified = True
+            return fixed
+
+    def open(self):
+        """Open the subtitle file (detect encoding if necessary)."""
+        with open(self.filename, 'rb') as file_open:
+            binary = file_open.read()
+
+        try:
+            return binary.decode()
+        except UnicodeDecodeError:
+            from chardet import detect
+            encoding = detect(binary).get('encoding')
+            try:
+                return binary.decode(encoding)
+            except LookupError:
+                return binary.decode(errors='ignore')
+
+    def prompt(self, matches, autoyes):
+        """Prompt user to remove cells from subtitle file."""
+
+        if autoyes:
+            return matches
+
+        deletions = []
+
+        for match in matches:
+            os.system('clear')
+            print(self.cells[match])
+            print('----------------------------------------')
+            print("Delete cell %s of '%s'?" % (str(match + 1), self.filename))
+            response = getch().lower()
+            if response == 'y':
+                os.system('clear')
+                deletions.append(match)
+            elif response == 'n':
+                os.system('clear')
+            else:
+                if deletions or self.modified:
+                    warning("Not saving changes made to '%s'" % self.filename)
+                sys.exit(0)
+
+        return deletions
+
+    def split(self, text):
+        """Split text into a list of cells."""
+
+        import re
+        if re.search('\n\n', text):
+            return text.split('\n\n')
+        elif re.search('\r\n\r\n', text):
+            return text.split('\r\n\r\n')
+        else:
+            error("'%s' does not appear to be a 'srt' subtitle file" % self.filename)
+            sys.exit(1)
+
+
 def error(*objs):
     """Print error message to stderr."""
 
@@ -89,10 +177,10 @@ def main():
         Config.patterns = Config.terms
 
     for srt in srts:
-        process_file(srt)
+        SubtitleFile(srt, options)
 
     if not Config.results:
-        basenames = [os.path.basename(x) for x in srts]
+        basenames = [os.path.basename(x) for x in arguments]
         print('Search of', basenames, 'returned no results.')
 
         # leave the terminal open long enough to read
@@ -145,7 +233,7 @@ def parse():
         action="help",
         help=argparse.SUPPRESS)
     parser.add_argument(
-        "-r", "--regex",
+        "--regex",
         action="store_true",
         dest="regex",
         help="indicate use of regex matches")
@@ -153,6 +241,11 @@ def parse():
         "--version",
         action="version",
         version="%s %s" % (Config.program, Config.version))
+    parser.add_argument(
+        "-y", "--yes",
+        action="store_true",
+        dest="autoyes",
+        help="automatic yes to prompts")
     parser.add_argument(
         action="append",
         dest="targets",
@@ -179,77 +272,6 @@ def prep_regex(patterns):
     return [re.compile(pattern) for pattern in patterns]
 
 
-def process_file(srt):
-    """Open, edit, and save subtitle file (as necessary)."""
-
-    modified = False
-
-    with open(srt, 'rb') as file_open:
-        binary = file_open.read()
-
-    try:
-        text = binary.decode()
-    except UnicodeDecodeError:
-        from chardet import detect
-        encoding = detect(binary).get('encoding')
-        try:
-            text = binary.decode(encoding)
-        except LookupError:
-            text = binary.decode(errors='ignore')
-
-    # search and replace for problematic characters
-    if Config.charfixes:
-        keys = ''.join(Config.charfixes.keys())
-        values = ''.join(Config.charfixes.values())
-        replaced = text.translate(str.maketrans(keys, values))
-        if replaced != text:
-            text = replaced
-            modified = True
-
-    # split srt's text into a list comprised of cells
-    cells = text.split('\n\n')
-
-    if len(cells) == 1:
-        error("'%s' does not appear to be a 'srt' subtitle file" % srt)
-        sys.exit(1)
-
-    matches = search(cells)
-
-    if matches:
-        Config.results = True
-        deletions = prompt(srt, cells, matches, modified)
-        if deletions:
-            cells = remove_elements(cells, deletions)
-            modified = True
-
-    if modified:
-        save_file(srt, cells)
-
-
-def prompt(filename, cells, matches, modified):
-    """Prompt user to remove cells from subtitle file."""
-
-    deletions = []
-
-    for match in matches:
-        os.system('clear')
-        print(cells[match])
-        print('----------------------------------------')
-        print("Delete cell %s of '%s'?" % (str(match + 1), filename))
-        response = getch().lower()
-        if response == 'y':
-            os.system('clear')
-            deletions.append(match)
-        elif response == 'n':
-            os.system('clear')
-        else:
-            if deletions or modified:
-                warning("Not saving changes made to '%s'" % filename)
-            sys.exit(0)
-
-    return deletions
-
-
 def remove_elements(target, indices):
     """Remove multiple elements from a list and return result.
     This implementation is faster than the alternative below.
@@ -269,7 +291,7 @@ def remove_elements(target, indices):
 #     return [e for i, e in enumerate(target) if i not in indices]
 
 
-def save_file(srt, cells):
+def save_file(filename, cells):
     """Format and save cells."""
 
     # fix the cell numbering
@@ -283,12 +305,12 @@ def save_file(srt, cells):
         cells[-1] += '\n'
 
     # save the rejoined the list of cells
-    with open(srt, 'w') as file_open:
+    with open(filename, 'w') as file_open:
         file_open.write('\n\n'.join(cells))
 
 
 def search(cells):
-    """Return list of cells matching criteria."""
+    """Return list of cells to be removed."""
 
     matches = []
     for index, cell in enumerate(cells):
