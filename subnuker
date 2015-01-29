@@ -1,6 +1,24 @@
 #!/usr/bin/python3
-"""Scan for and remove advertising from SRT subtitle files and/or folders"""
+# -*- coding: utf-8 -*-
 
+"""
+Remove advertising from subtitle files
+
+This script is intended to scan subtitle files (or folders containing subtitle
+files) and prompt to remove cells with advertising. Subtitle files may be
+searched via regular expression or text matches. The script can handle srt
+subtitle files natively or other formats (ass, srt, ssa, sub) via the aeidon
+Python package.
+"""
+
+__program__ = 'subnuker'
+
+__author__ = 'Six <brbsix@gmail.com>'
+__license__ = 'GPLv3'
+__version__ = '0.1-dev'
+
+
+# BEGIN CODE
 
 import os
 import sys
@@ -10,8 +28,6 @@ class Config:   # pylint: disable=R0903
     """Store global script configuration values."""
 
     charfixes = {'¶': '♪'}
-    patterns = []
-    program = os.path.splitext(os.path.basename(__file__))[0]
     results = False
     regex = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              r'(?<!\.)\.com', r'(?<!\.)\.net', r'(?<!\.)\.org',
@@ -20,12 +36,18 @@ class Config:   # pylint: disable=R0903
     terms = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              '.com', '.net', '.org', 'air date', 'caption', 'download',
              'subtitle', 'sync', 'www.', 'âª']
-    version = '0.1.dev1'
+
+    # Used for storing parsed options/arguments
+    arguments = None
+    options = None
+
+    # Used for storing loaded terms or compiled regex)
+    patterns = []
 
 
 class AeidonProject:
     """Process individual subtitle files with python3-aeidon."""
-    def __init__(self, filename, options):
+    def __init__(self, filename):
         try:
             import aeidon
         except ImportError:
@@ -33,7 +55,6 @@ class AeidonProject:
             sys.exit(1)
 
         self.filename = filename
-        self.options = options
         self.project = aeidon.Project()  # pylint: disable=W0201
 
         self.open()
@@ -83,7 +104,7 @@ class AeidonProject:
     def prompt(self, matches):
         """Prompt user to remove cells from subtitle file."""
 
-        if self.options.autoyes:
+        if Config.options.autoyes:
             return matches
 
         deletions = []
@@ -126,7 +147,7 @@ class AeidonProject:
     def termfinder(self, pattern):
         """Search srt in project for cells matching term."""
 
-        if self.options.regex:
+        if Config.options.regex:
             self.project.set_search_regex(pattern)
         else:
             self.project.set_search_string(pattern)
@@ -151,9 +172,8 @@ class AeidonProject:
 
 class SrtProject:
     """Process individual srt files."""
-    def __init__(self, filename, options):
+    def __init__(self, filename):
         self.filename = filename
-        self.options = options
         self.modified = False
 
         text = self.open()
@@ -184,14 +204,6 @@ class SrtProject:
             self.modified = True
         return fixed
 
-    def ismatch(self, text, pattern):  # pylint: disable=R0201
-        """Test whether text contains string or matches regex."""
-
-        if hasattr(pattern, 'search'):
-            return pattern.search(text)
-        else:
-            return pattern in text
-
     def open(self):
         """Open the subtitle file (detect encoding if necessary)."""
         with open(self.filename, 'rb') as file_open:
@@ -214,7 +226,7 @@ class SrtProject:
     def prompt(self, matches):
         """Prompt user to remove cells from subtitle file."""
 
-        if self.options.autoyes:
+        if Config.options.autoyes:
             return matches
 
         deletions = []
@@ -260,7 +272,7 @@ class SrtProject:
         matches = []
         for index, cell in enumerate(self.cells):
             for pattern in Config.patterns:
-                if self.ismatch(cell, pattern):
+                if ismatch(cell, pattern):
                     matches.append(index)
                     break
 
@@ -285,20 +297,6 @@ def error(*objs):
     print('ERROR:', *objs, file=sys.stderr)
 
 
-# def getch():
-#     """Request a single character input from the user."""
-
-#     import subprocess
-
-#     process = subprocess.Popen('read -rn1 && echo "$REPLY"',
-#                                executable='/bin/bash',
-#                                shell=True,
-#                                stderr=subprocess.PIPE,
-#                                stdout=subprocess.PIPE)
-
-#     return process.stdout.read().decode().strip()
-
-
 def getch():
     """Request a single character input from the user."""
 
@@ -317,34 +315,31 @@ def getch():
         return msvcrt.getwch()
 
 
+def ismatch(text, pattern):
+    """Test whether text contains string or matches regex."""
+
+    if hasattr(pattern, 'search'):
+        return pattern.search(text)
+    else:
+        return pattern in text
+
+
 def main():
     """Start application."""
 
-    options, arguments = parse()
+    Config.options, Config.arguments = parse()
 
-    if options.aeidon:
-        extensions = ['ass', 'srt', 'ssa', 'sub']
+    if Config.options.aeidon:
+        start_aeidon()
     else:
-        extensions = ['srt']
-
-    filenames = prep_files(arguments, extensions)
-
-    if not filenames:
-        error('No valid targets were specified')
-        sys.exit(1)
-
-    # load terms from pattern files if necessary
-    if options.file:
-        Config.terms = open_terms(options.file)
-
-    process_subtitles(filenames, options)
+        start_srt()
 
     if not Config.results:
-        basenames = [os.path.basename(x) for x in arguments]
+        basenames = [os.path.basename(x) for x in Config.arguments]
         print('Search of', basenames, 'returned no results.')
 
-        # leave the terminal open long enough to read
-        if options.gui:
+        # leave the terminal open long enough to read message
+        if Config.options.gui:
             from time import sleep
             sleep(2)
 
@@ -353,25 +348,6 @@ def open_error(filename):
     """Display a generic error message upon failure to open file."""
     error("Unable to open '%s'" % filename)
     sys.exit(1)
-
-
-def open_terms(termfiles):
-    """Load files passed via options and return list of terms."""
-
-    terms = []
-
-    for termfile in termfiles:
-        try:
-            terms += [l.rstrip('\n') for l in open(termfile)]
-        except:  # pylint: disable=W0702
-            error("Unable to load pattern file '%s'" % termfile)
-            sys.exit(1)
-
-    if terms:
-        return terms
-    else:
-        error('No terms were loaded')
-        sys.exit(1)
 
 
 def parse():
@@ -411,7 +387,7 @@ def parse():
     parser.add_argument(
         "--version",
         action="version",
-        version="%s %s" % (Config.program, Config.version))
+        version="%s %s" % (__program__, __version__))
     parser.add_argument(
         "-y", "--yes",
         action="store_true",
@@ -429,18 +405,62 @@ def parse():
     return options, arguments
 
 
-def prep_files(paths, aeidon):
+def pattern_logic_aeidon():
+    """Return patterns to be used for searching subtitles via aeidon."""
+
+    if Config.options.file:
+        return prep_patterns(Config.options.file)
+    elif Config.options.regex:
+        return Config.regex
+    else:
+        return Config.terms
+
+
+def pattern_logic_srt():
+    """Return patterns to be used for searching srt subtitles."""
+
+    if Config.options.file and Config.options.regex:
+        return prep_regex(prep_patterns(Config.options.file))
+    elif Config.options.file:
+        return prep_patterns(Config.options.file)
+    elif Config.options.regex:
+        return prep_regex(Config.regex)
+    else:
+        return Config.terms
+
+
+def prep_files(paths, extensions):
     """Parses `paths` (which may consist of files and/or directories).
     Removes duplicates, sorts, and returns verified srt files."""
 
     from batchpath import GeneratePaths
 
-    if aeidon:
-        extensions = ['ass', 'srt', 'ssa', 'sub']
-    else:
-        extensions = ['srt']
+    filenames = GeneratePaths().files(paths, os.W_OK, extensions, 0, True)
 
-    return GeneratePaths().files(paths, os.W_OK, extensions, 0, True)
+    if filenames:
+        return filenames
+    else:
+        error('No valid targets were specified')
+        sys.exit(1)
+
+
+def prep_patterns(filenames):
+    """Load pattern files passed via options and return list of patterns."""
+
+    patterns = []
+
+    for filename in filenames:
+        try:
+            patterns += [l.rstrip('\n') for l in open(filename)]
+        except:  # pylint: disable=W0702
+            error("Unable to load pattern file '%s'" % filename)
+            sys.exit(1)
+
+    if patterns:
+        return patterns
+    else:
+        error('No terms were loaded')
+        sys.exit(1)
 
 
 def prep_regex(patterns):
@@ -464,30 +484,6 @@ def prerequisites():
            .format(url, other))
 
 
-def process_subtitles(filenames, options):
-    """Process subtitles as indicated per options."""
-
-    if options.aeidon:
-        if options.regex:
-            Config.patterns = Config.regex
-        else:
-            Config.patterns = Config.terms
-        for filename in filenames:
-            AeidonProject(filename, options)
-    else:
-        # compile regex patterns if necessary
-        if options.regex:
-            if options.files:
-                Config.patterns = prep_regex(Config.terms)
-            else:
-                Config.patterns = prep_regex(Config.regex)
-        else:
-            Config.patterns = Config.terms
-
-        for filename in filenames:
-            SrtProject(filename, options)
-
-
 def remove_elements(target, indices):
     """Remove multiple elements from a list and return result.
     This implementation is faster than the alternative below.
@@ -505,6 +501,30 @@ def remove_elements(target, indices):
 # def remove_elements(target, indices):
 #     """Remove multiple elements from a list and return result."""
 #     return [e for i, e in enumerate(target) if i not in indices]
+
+
+def start_aeidon():
+    """Prepare filenames and patterns then process subtitles with aeidon."""
+
+    extensions = ['ass', 'srt', 'ssa', 'sub']
+    Config.filenames = prep_files(Config.arguments, extensions)
+
+    Config.patterns = pattern_logic_aeidon()
+
+    for filename in Config.filenames:
+        AeidonProject(filename)
+
+
+def start_srt():
+    """Prepare filenames and patterns then process srt subtitles."""
+
+    extensions = ['srt']
+    Config.filenames = prep_files(Config.arguments, extensions)
+
+    Config.patterns = pattern_logic_srt()
+
+    for filename in Config.filenames:
+        SrtProject(filename)
 
 
 def stderr(*objs):
