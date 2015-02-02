@@ -471,7 +471,7 @@ def prerequisites():
     """Display information about obtaining the aeidon module."""
     url = "http://home.gna.org/gaupol/download.html"
     debian = "sudo apt-get install python3-aeidon"
-    other = "python3 setup.py --without-gaupol clean install"
+    other = "python3 setup.py --user --without-gaupol clean install"
 
     error("The aeidon module is missing!")
     stderr("\nTry '{0}' or the appropriate command for your package manager."
