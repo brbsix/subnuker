@@ -534,6 +534,3 @@ def warning(*objs):
 
     print('WARNING:', *objs, file=sys.stderr)
 
-
-if __name__ == '__main__':
-    main()
