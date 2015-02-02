@@ -12,13 +12,10 @@ Python package.
 """
 
 __program__ = 'subnuker'
-
-__author__ = 'Six <brbsix@gmail.com>'
-__license__ = 'GPLv3'
 __version__ = '0.1-dev'
 
 
-# BEGIN CODE
+#/--- BEGIN CODE ---/#
 
 import os
 import sys
@@ -254,7 +251,7 @@ class SrtProject:
 
         # fix the cell numbering
         for index, cell in enumerate(self.cells):
-            cell_split = cell.split('\n')
+            cell_split = cell.splitlines()
             cell_split[0] = str(index + 1)
             self.cells[index] = '\n'.join(cell_split)
 
@@ -369,7 +366,7 @@ def parse():
         "-f", "--file",
         action="append",
         dest="file",
-        help="obtain match terms from FILE")
+        help="obtain matches from FILE")
     parser.add_argument(
         "-g", "--gui",
         action="store_true",
