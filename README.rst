@@ -57,7 +57,7 @@ Or scan entire folders containing srt subtitle files:
 
 ::
 
-  subnuker folder
+  subnuker FOLDER1 FOLDER2 FOLDER3
 
 By default, `subnuker` scans subtitles with a built-in list of search terms.
 Subnuker can also obtain search terms or regular expressions from multiple
