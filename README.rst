@@ -44,16 +44,16 @@ Additional information is available @ https://github.com/otsaloma/gaupol/blob/ma
 Usage
 -----
 
-From the command line, run `subnuker --help` to display available options.
+From the command line, run :code:`subnuker --help` to display available options.
 
-You may scan SRT subtitle files with or without the regex flag, though
+You may scan srt subtitle files with or without the regex flag, though
 there are likely to be less false positives with regex:
 
 ::
 
   subnuker --regex FILE1.srt FILE2.srt FILE3.srt
 
-Or scan entire folders containing SRT subtitle files:
+Or scan entire folders containing srt subtitle files:
 
 ::
 
@@ -61,14 +61,13 @@ Or scan entire folders containing SRT subtitle files:
 
 By default, `subnuker` scans subtitles with a built-in list of search terms.
 Subnuker can also obtain search terms or regular expressions from multiple
-pattern files, similar to `grep`'s -f/--file option.
+pattern files, similar to :code:`grep`'s :code:`--file` option.
 
 ::
 
   subnuker --file PATTERNFILE FILE.srt
 
-The `--aeidon` option indicates the use of the aeidon module. The aeidon module
-also has full support for regex matching and multiple pattern files:
+The :code:`--aeidon` option indicates the use of the aeidon module. The aeidon module has full support for regex matching and multiple pattern files:
 
 ::
 
