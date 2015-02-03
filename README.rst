@@ -37,7 +37,7 @@ After unpacking, run:
 
   python3 setup.py --user --without-gaupol clean install
 
-Additional information is available @ https://github.com/otsaloma/gaupol/blob/master/README.aeidon.md.
+Additional information is available here: https://github.com/otsaloma/gaupol/blob/master/README.aeidon.md
 
 Usage
 -----
