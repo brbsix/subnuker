@@ -1,5 +1,3 @@
-Python script to remove advertising from subtitle files.
-
 About
 ===================
 
