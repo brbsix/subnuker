@@ -12,10 +12,10 @@ Python package.
 """
 
 __program__ = 'subnuker'
-__version__ = '0.1-dev'
+__version__ = '0.1'
 
 
-#/--- BEGIN CODE ---/#
+# --- BEGIN CODE --- #
 
 import os
 import sys
@@ -86,15 +86,23 @@ class AeidonProject:
         try:
             self.project.open_main(self.filename)
         except UnicodeDecodeError:
-            from chardet import detect
+            try:
+                from chardet import detect
+            except ImportError:
+                error("Please install python module 'chardet'.")
+                sys.exit(1)
+
             encoding = detect(open(self.filename, 'rb').read()).get('encoding')
+
             try:
                 self.project.open_main(self.filename, encoding)
             except UnicodeDecodeError:
-                error("'%s' encountered a fatal encoding error" % self.filename)
+                error("'%s' encountered a fatal encoding error" %
+                      self.filename)
                 sys.exit(1)
             except:  # pylint: disable=W0702
                 open_error(self.filename)
+
         except:  # pylint: disable=W0702
             open_error(self.filename)
 
@@ -284,7 +292,8 @@ class SrtProject:
         elif re.search('\r\n\r\n', text):
             return text.split('\r\n\r\n')
         else:
-            error("'%s' does not appear to be a 'srt' subtitle file" % self.filename)
+            error("'%s' does not appear to be a 'srt' subtitle file" %
+                  self.filename)
             sys.exit(1)
 
 
@@ -533,4 +542,3 @@ def warning(*objs):
     """Print warning message to stderr."""
 
     print('WARNING:', *objs, file=sys.stderr)
-
