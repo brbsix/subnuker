@@ -15,13 +15,13 @@ setup(
     version=__version__,
     author='Brian Beffa',
     author_email='brbsix@gmail.com',
-    description="Utilities to generate and verify pathnames",
+    description="Remove advertising from subtitle files",
     long_description=read('README.rst'),
     url='https://github.com/brbsix/subnuker',
     license='GPLv3',
     keywords=['advertising', 'srt', 'subtitle'],
     py_modules=['subnuker'],
-    install_requires=['batchpath'],
+    install_requires=['batchpath', 'chardet'],
     entry_points={
         'console_scripts': [
             'subnuker=subnuker:main'],
