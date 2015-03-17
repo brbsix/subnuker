@@ -28,11 +28,11 @@ class Config:   # pylint: disable=R0903
     results = False
     regex = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              r'(?<!\.)\.com', r'(?<!\.)\.net', r'(?<!\.)\.org',
-             'air date', 'caption', 'download', 'episode', 'subtitle', 'sync',
-             r'(?<![A-Za-z0-9])www\.', 'âª']
+             'air date', 'caption', 'download', 'subtitle', 'sync',
+             'TVShow', r'(?<![A-Za-z0-9])www\.', 'âª']
     terms = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              '.com', '.net', '.org', 'air date', 'caption', 'download',
-             'episode', 'subtitle', 'sync', 'www.', 'âª']
+             'subtitle', 'sync', 'TVShow', 'www.', 'âª']
 
     # Used for storing parsed options/arguments
     arguments = None
@@ -341,7 +341,7 @@ def main(args=None):
         start_srt()
 
     if not Config.results:
-        basenames = [os.path.basename(x) for x in Config.arguments]
+        basenames = [os.path.basename(os.path.abspath(x)) for x in Config.arguments]
         print('Search of', basenames, 'returned no results.')
 
         # leave the terminal open long enough to read message
