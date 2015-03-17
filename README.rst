@@ -9,7 +9,7 @@ Installation
 
 ::
 
-  pip3 install subnuker
+  pip3 install --user subnuker
 
 The :code:`subnuker` package is known to be compatible with Python 3.
 
