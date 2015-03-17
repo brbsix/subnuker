@@ -12,7 +12,7 @@ Python package.
 """
 
 __program__ = 'subnuker'
-__version__ = '0.2'
+__version__ = '0.3'
 
 
 # --- BEGIN CODE --- #
@@ -28,11 +28,11 @@ class Config:   # pylint: disable=R0903
     results = False
     regex = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              r'(?<!\.)\.com', r'(?<!\.)\.net', r'(?<!\.)\.org',
-             'air date', 'caption', 'download', 'subtitle', 'sync',
+             'air date', 'caption', 'download', 'episode', 'subtitle', 'sync',
              r'(?<![A-Za-z0-9])www\.', 'âª']
     terms = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              '.com', '.net', '.org', 'air date', 'caption', 'download',
-             'subtitle', 'sync', 'www.', 'âª']
+             'episode', 'subtitle', 'sync', 'www.', 'âª']
 
     # Used for storing parsed options/arguments
     arguments = None
@@ -330,10 +330,10 @@ def ismatch(text, pattern):
         return pattern in text
 
 
-def main():
+def main(args=None):
     """Start application."""
 
-    Config.options, Config.arguments = parse()
+    Config.options, Config.arguments = parse(args)
 
     if Config.options.aeidon:
         start_aeidon()
@@ -356,7 +356,7 @@ def open_error(filename):
     sys.exit(1)
 
 
-def parse():
+def parse(args):
     """Parse command-line arguments. Arguments may consist of any
     combination of directories, files, and options."""
 
@@ -405,7 +405,7 @@ def parse():
         help=argparse.SUPPRESS,
         nargs="*")
 
-    options = parser.parse_args()
+    options = parser.parse_args(args)
     arguments = options.targets[0]
 
     return options, arguments
