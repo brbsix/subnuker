@@ -13,9 +13,9 @@ Installation
 
   pip3 install --user subnuker
 
-The :code:`subnuker` package is known to be compatible with Python 3.
+The ``subnuker`` package is known to be compatible with Python 3.
 
-`subnuker` can process srt subtitle files right out of the box. If you wish to handle other types of subtitle files (ass, srt, ssa, sub), you'll need to install the aeidon module.
+``subnuker`` can process srt subtitle files right out of the box. If you wish to handle other types of subtitle files (ass, srt, ssa, sub), you'll need to install the **aeidon** module.
 
 On Debian/Ubuntu, try:
 
