@@ -38,9 +38,9 @@ https://github.com/otsaloma/gaupol/blob/master/README.aeidon.md
 Usage
 =====
 
-From the command line, run :code:`subnuker --help` to display available options.
+From the command line, run ``subnuker --help`` to display available options.
 
-In general, I strongly recommend using the `--regex` flag. The built-in "wordlist" will identify almost all advertisements with nearly zero false positives. To scan srt subtitles, run the following:
+In general, I strongly recommend using the ``--regex`` flag. The built-in "wordlist" will identify almost all advertisements with nearly zero false positives. To scan srt subtitles, run the following:
 
 ::
 
