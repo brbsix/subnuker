@@ -5,6 +5,7 @@ This script is intended to scan subtitle files (or folders containing subtitle f
 
 Note: I recommend you check out my project subsystem_. It is used for batch processing of subtitle/video files from the terminal or GUI (i.e. Thunar custom actions or Nautilus actions). It allows you to rapidly do the following in order: rename video file(s), download subtitle file(s), scan subtitle file(s) with subnuker.
 
+
 Installation
 ============
 
@@ -32,6 +33,7 @@ After unpacking, run:
 Additional information on installing Gaupol is available here:
 
 https://github.com/otsaloma/gaupol/blob/master/README.aeidon.md
+
 
 Usage
 =====
@@ -61,6 +63,7 @@ The :code:`--aeidon` option indicates the use of the aeidon module. The aeidon m
 ::
 
   subnuker --aeidon FILE.srt
+
 
 License
 =======
