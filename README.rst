@@ -3,7 +3,7 @@ About
 
 This script is intended to scan subtitle files (or folders containing subtitle files) and prompt to remove cells with advertising. Subtitle files may be searched via regular expression or plaintext. The script can handle srt subtitle files natively or other formats (ass, srt, ssa, sub) via the Python module **aeidon**.
 
-Note: I recommend you check out my project subsystem_. It is used for batch processing of subtitle/video files from the terminal or GUI (i.e. Thunar custom actions or Nautilus actions). It allows you to rapidly do the following in order: rename video file(s), download subtitle file(s), scan subtitle file(s) with subnuker.
+I recommend you check out my project subsystem_. It is used for batch processing of subtitle/video files from the terminal or GUI (i.e. Thunar custom actions or Nautilus actions). It allows you to rapidly do the following in order: rename video file(s), download subtitle file(s), scan subtitle file(s) with subnuker.
 
 
 Installation
