@@ -13,9 +13,9 @@ Installation
 
   pip3 install --user subnuker
 
-The ``subnuker`` package is known to be compatible with Python 3.
+The :code:`subnuker` package is known to be compatible with Python 3.
 
-``subnuker`` can process srt subtitle files right out of the box. If you wish to handle other types of subtitle files (ass, srt, ssa, sub), you'll need to install the **aeidon** module.
+:code:`subnuker` can process srt subtitle files right out of the box. If you wish to handle other types of subtitle files (ass, srt, ssa, sub), you'll need to install the **aeidon** module.
 
 On Debian/Ubuntu, try:
 
@@ -38,9 +38,9 @@ https://github.com/otsaloma/gaupol/blob/master/README.aeidon.md
 Usage
 =====
 
-From the command line, run ``subnuker --help`` to display available options.
+From the command line, run :code:`subnuker --help` to display available options.
 
-In general, I strongly recommend using the ``--regex`` flag. The built-in "wordlist" will identify almost all advertisements with nearly zero false positives. To scan srt subtitles, run the following:
+In general, I strongly recommend using the :code:`--regex` flag. The built-in regex "wordlist" will identify almost all advertisements with nearly zero false positives. To scan srt subtitles, run the following:
 
 ::
 
@@ -52,13 +52,13 @@ Or scan entire folders containing srt subtitle files:
 
   subnuker FOLDER1 FOLDER2 FOLDER3
 
-By default, `subnuker` scans subtitles with a built-in list of plaintext search terms or regular expression. `subnuker` can also obtain patterns from multiple pattern files, similar to :code:`grep`'s :code:`--file` option.
+By default, :code:`subnuker` scans subtitles with a built-in list of plaintext search terms or regular expression. :code:`subnuker` can also obtain patterns from multiple pattern files, similar to :code:`grep`'s :code:`--file` option.
 
 ::
 
   subnuker --file PATTERNFILE FILE.srt
 
-The :code:`--aeidon` option indicates the use of the aeidon module. The aeidon module has full support for all `subnuker` options:
+The :code:`--aeidon` option indicates the use of the aeidon module. The aeidon module has full support for all :code:`subnuker` options:
 
 ::
 
