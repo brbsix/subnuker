@@ -29,12 +29,12 @@ class Config:   # pylint: disable=R0903
 
     regex = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              r'(?<!\.)\.com', r'(?<!\.)\.net', r'(?<!\.)\.org',
-             'air date', 'caption', 'download', 'subtitle', 'sync',
-             'TVShow', r'(?<![A-Za-z0-9])www\.', 'âª']
+             'air date', 'caption', 'download', r'[Nn]anban', 'subtitle',
+             'sync', 'TVShow', r'(?<![A-Za-z0-9])www\.', 'âª']
 
     terms = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              '.com', '.net', '.org', 'air date', 'caption', 'download',
-             'subtitle', 'sync', 'TVShow', 'www.', 'âª']
+             'Nanban', 'nanban', 'subtitle', 'sync', 'TVShow', 'www.', 'âª']
 
     # bool switch
     results = False
