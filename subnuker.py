@@ -340,7 +340,7 @@ def ismatch(text, pattern):
 def main(args=None):
     """Start application."""
 
-    Config.options, Config.arguments = parse(args)
+    Config.options, Config.args = parse(args)
 
     if Config.options.aeidon:
         start_aeidon()
@@ -348,7 +348,7 @@ def main(args=None):
         start_srt()
 
     if not Config.results:
-        basenames = [os.path.basename(os.path.abspath(x)) for x in Config.arguments]
+        basenames = [os.path.basename(os.path.abspath(x)) for x in Config.args]
         print('Search of', basenames, 'returned no results.')
 
         # leave the terminal open long enough to read message
@@ -520,7 +520,7 @@ def start_aeidon():
     """Prepare filenames and patterns then process subtitles with aeidon."""
 
     extensions = ['ass', 'srt', 'ssa', 'sub']
-    Config.filenames = prep_files(Config.arguments, extensions)
+    Config.filenames = prep_files(Config.args, extensions)
 
     Config.patterns = pattern_logic_aeidon()
 
@@ -532,7 +532,7 @@ def start_srt():
     """Prepare filenames and patterns then process srt subtitles."""
 
     extensions = ['srt']
-    Config.filenames = prep_files(Config.arguments, extensions)
+    Config.filenames = prep_files(Config.args, extensions)
 
     Config.patterns = pattern_logic_srt()
 
