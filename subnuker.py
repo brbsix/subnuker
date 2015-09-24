@@ -280,7 +280,11 @@ class SrtProject:
                 self.modified = True
 
         if self.modified:
-            self.save()
+            try:
+                self.save()
+            except:
+                error("Failed to save '%s'\nConsider running '--fix' "
+                      "or use the '--aeidon' option." % self.filename)
 
     def fixchars(self, text):
         """Find and replace problematic characters."""
