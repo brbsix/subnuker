@@ -343,11 +343,17 @@ class SrtProject:
     def save(self):
         """Format and save cells."""
 
-        # fix the cell numbering
-        for index, cell in enumerate(self.cells):
+        # re-number cells
+        newcells = []
+        num = 0
+        for cell in self.cells:
             cell_split = cell.splitlines()
-            cell_split[0] = str(index + 1)
-            self.cells[index] = '\n'.join(cell_split)
+            if len(cell_split) < 2:
+                continue
+            cell_split[0] = str(num + 1)
+            newcells.append('\n'.join(cell_split))
+            num += 1
+        self.cells = newcells
 
         # add a newline to the last line if necessary
         if not self.cells[-1].endswith('\n'):
