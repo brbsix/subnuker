@@ -99,7 +99,8 @@ class AeidonProject:
                 error("Please install python module 'chardet'.")
                 sys.exit(1)
 
-            encoding = detect(open(self.filename, 'rb').read()).get('encoding')
+            with open(self.filename, 'rb') as openfile:
+                encoding = detect(openfile.read()).get('encoding')
 
             try:
                 self.project.open_main(self.filename, encoding)
