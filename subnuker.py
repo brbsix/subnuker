@@ -83,7 +83,7 @@ class AeidonProject:
     @property
     def modified(self):
         """Check whether subtitle file has been modified."""
-        return True if self.project.main_changed > 0 else False
+        return self.project.main_changed > 0
 
     def open(self):
         """Open the subtitle file into an Aeidon project."""
