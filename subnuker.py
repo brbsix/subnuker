@@ -26,7 +26,7 @@ class Config:   # pylint: disable=R0903
     """Store global script configuration values."""
 
     charfixes = {'¶': '♪'}
-    results = False
+
     regex = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              r'(?<!\.)\.com', r'(?<!\.)\.net', r'(?<!\.)\.org',
              'air date', 'caption', 'download', 'subtitle', 'sync',
@@ -36,11 +36,14 @@ class Config:   # pylint: disable=R0903
              '.com', '.net', '.org', 'air date', 'caption', 'download',
              'subtitle', 'sync', 'TVShow', 'www.', 'âª']
 
-    # Used for storing parsed options/arguments
+    # bool switch
+    results = False
+
+    # store parsed options/arguments
     arguments = None
     options = None
 
-    # Used for storing loaded terms or compiled regex)
+    # store terms or compiled regex
     patterns = []
 
 
