@@ -25,14 +25,14 @@ class Config:   # pylint: disable=R0903
 
     """Store global script configuration values."""
 
-    charfixes = {'¶': '♪'}
+    CHARFIXES = {'¶': '♪'}
 
-    regex = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
+    REGEX = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              r'(?<!\.)\.com', r'(?<!\.)\.net', r'(?<!\.)\.org',
              'air date', 'caption', 'download', r'[Nn]anban', 'subtitle',
              'sync', 'TVShow', r'(?<![A-Za-z0-9])www\.', 'âª']
 
-    terms = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
+    TERMS = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              '.com', '.net', '.org', 'air date', 'caption', 'download',
              'Nanban', 'nanban', 'subtitle', 'sync', 'TVShow', 'www.', 'âª']
 
@@ -78,9 +78,9 @@ class AeidonProject:
 
     def fixchars(self):
         """Replace characters or strings within subtitle file."""
-        for key in Config.charfixes:
+        for key in Config.CHARFIXES:
             self.project.set_search_string(key)
-            self.project.set_search_replacement(Config.charfixes[key])
+            self.project.set_search_replacement(Config.CHARFIXES[key])
             self.project.replace_all()
 
     @property
@@ -193,7 +193,7 @@ class SrtProject:
 
         text = self.open()
 
-        if Config.charfixes:
+        if Config.CHARFIXES:
             text = self.fixchars(text)
 
         self.cells = self.split(text)
@@ -212,8 +212,8 @@ class SrtProject:
 
     def fixchars(self, text):
         """Find and replace problematic characters."""
-        keys = ''.join(Config.charfixes.keys())
-        values = ''.join(Config.charfixes.values())
+        keys = ''.join(Config.CHARFIXES.keys())
+        values = ''.join(Config.CHARFIXES.values())
         fixed = text.translate(str.maketrans(keys, values))
         if fixed != text:
             self.modified = True
@@ -427,9 +427,9 @@ def pattern_logic_aeidon():
     if Config.options.file:
         return prep_patterns(Config.options.file)
     elif Config.options.regex:
-        return Config.regex
+        return Config.REGEX
     else:
-        return Config.terms
+        return Config.TERMS
 
 
 def pattern_logic_srt():
@@ -440,9 +440,9 @@ def pattern_logic_srt():
     elif Config.options.file:
         return prep_patterns(Config.options.file)
     elif Config.options.regex:
-        return prep_regex(Config.regex)
+        return prep_regex(Config.REGEX)
     else:
-        return Config.terms
+        return Config.TERMS
 
 
 def prep_files(paths, extensions):
