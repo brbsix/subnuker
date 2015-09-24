@@ -169,15 +169,15 @@ class AeidonProject:
 
         while True:
             try:
-                if len(matches) == 0:
-                    matches.append(self.project.find_next()[0])
-                else:
+                if matches:
                     last = matches[-1]
                     new = self.project.find_next(last + 1)[0]
                     if new != last and new > last:
                         matches.append(new)
                     else:
                         break
+                else:
+                    matches.append(self.project.find_next()[0])
             except StopIteration:
                 break
 
