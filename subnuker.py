@@ -372,7 +372,7 @@ def parse(args):
     parser = argparse.ArgumentParser(
         add_help=False,
         description="Remove spam and advertising from subtitle files.",
-        usage="%(prog)s [options] <srt files>")
+        usage="%(prog)s [OPTION]... TARGET...")
     parser.add_argument(
         "-a", "--aeidon",
         action="store_true",
