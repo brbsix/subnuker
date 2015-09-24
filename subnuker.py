@@ -22,6 +22,7 @@ import sys
 
 
 class Config:   # pylint: disable=R0903
+
     """Store global script configuration values."""
 
     charfixes = {'¶': '♪'}
@@ -30,6 +31,7 @@ class Config:   # pylint: disable=R0903
              r'(?<!\.)\.com', r'(?<!\.)\.net', r'(?<!\.)\.org',
              'air date', 'caption', 'download', 'subtitle', 'sync',
              'TVShow', r'(?<![A-Za-z0-9])www\.', 'âª']
+
     terms = ['1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x',
              '.com', '.net', '.org', 'air date', 'caption', 'download',
              'subtitle', 'sync', 'TVShow', 'www.', 'âª']
@@ -43,7 +45,9 @@ class Config:   # pylint: disable=R0903
 
 
 class AeidonProject:
+
     """Process individual subtitle files with python3-aeidon."""
+
     def __init__(self, filename):
         try:
             import aeidon
@@ -158,6 +162,7 @@ class AeidonProject:
             self.project.set_search_string(pattern)
 
         matches = []
+
         while True:
             try:
                 if len(matches) == 0:
@@ -176,7 +181,9 @@ class AeidonProject:
 
 
 class SrtProject:
+
     """Process individual srt files."""
+
     def __init__(self, filename):
         self.filename = filename
         self.modified = False
