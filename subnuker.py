@@ -47,6 +47,77 @@ class Config:   # pylint: disable=R0903
     patterns = []
 
 
+class AeidonFix:
+
+    """Repair individual subtitle files with python3-aeidon."""
+
+    def __init__(self, filename):
+        try:
+            import aeidon
+        except ImportError:
+            prerequisites()
+            sys.exit(1)
+
+        self.filename = filename
+        self.project = aeidon.Project()  # pylint: disable=W0201
+
+        self.open()
+
+        self.fixchars()
+
+        if self.modified:
+            self.save()
+        else:
+            info("No changes were made to '%s'" % self.filename)
+
+    def fixchars(self):
+        """Replace characters or strings within subtitle file."""
+        for key in Config.CHARFIXES:
+            self.project.set_search_string(key)
+            self.project.set_search_replacement(Config.CHARFIXES[key])
+            self.project.replace_all()
+
+    @property
+    def modified(self):
+        """Check whether subtitle file has been modified."""
+        return self.project.main_changed > 0
+
+    def open(self):
+        """Open the subtitle file into an Aeidon project."""
+        try:
+            self.project.open_main(self.filename)
+        except UnicodeDecodeError:
+            try:
+                from chardet import detect
+            except ImportError:
+                error("Please install python module 'chardet'.")
+                sys.exit(1)
+
+            with open(self.filename, 'rb') as openfile:
+                encoding = detect(openfile.read()).get('encoding')
+
+            try:
+                self.project.open_main(self.filename, encoding)
+            except UnicodeDecodeError:
+                error("'%s' encountered a fatal encoding error" %
+                      self.filename)
+                sys.exit(1)
+            except:  # pylint: disable=W0702
+                open_error(self.filename)
+
+        except:  # pylint: disable=W0702
+            open_error(self.filename)
+
+    def save(self):
+        """Save subtitle file."""
+        try:
+            self.project.save_main()
+            info("Saved changes to '%s'" % self.filename)
+        except:  # pylint: disable=W0702
+            error("Unable to save '%s'" % self.filename)
+            sys.exit(1)
+
+
 class AeidonProject:
 
     """Process individual subtitle files with python3-aeidon."""
@@ -314,6 +385,16 @@ def error(*objs):
     print('ERROR:', *objs, file=sys.stderr)
 
 
+def fix():
+    """Repair potentially damaged subtitle files with aeidon."""
+
+    extensions = ['ass', 'srt', 'ssa', 'sub']
+    Config.filenames = prep_files(Config.args, extensions)
+
+    for filename in Config.filenames:
+        AeidonFix(filename)
+
+
 def getch():
     """Request a single character input from the user."""
 
@@ -332,6 +413,12 @@ def getch():
         return msvcrt.getwch()
 
 
+def info(*objs):
+    """Print informational message to stderr."""
+
+    print('INFO:', *objs)
+
+
 def ismatch(text, pattern):
     """Test whether text contains string or matches regex."""
 
@@ -345,6 +432,10 @@ def main(args=None):
     """Start application."""
 
     Config.options, Config.args = parse(args)
+
+    if Config.options.fix:
+        fix()
+        sys.exit(0)
 
     if Config.options.aeidon:
         start_aeidon()
@@ -387,6 +478,11 @@ def parse(args):
         action="append",
         dest="file",
         help="obtain matches from FILE")
+    parser.add_argument(
+        "--fix",
+        action="store_true",
+        dest="fix",
+        help="repair potentially damaged subtitle files with aeidon")
     parser.add_argument(
         "-g", "--gui",
         action="store_true",
