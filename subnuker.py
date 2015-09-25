@@ -11,6 +11,7 @@ subtitle files natively or other formats (ass, srt, ssa, sub) via the aeidon
 Python package.
 """
 
+import logging
 import os
 import sys
 
@@ -44,73 +45,6 @@ class Config:   # pylint: disable=R0903
     patterns = []
 
 
-class AeidonFix:
-
-    """Repair individual subtitle files with python3-aeidon."""
-
-    def __init__(self, filename):
-        try:
-            import aeidon
-        except ImportError:
-            prerequisites()
-            sys.exit(1)
-
-        self.filename = filename
-        self.project = aeidon.Project()  # pylint: disable=W0201
-
-        self.open()
-
-        self.fixchars()
-
-        if self.modified:
-            self.save()
-        else:
-            info("No changes were made to '%s'" % self.filename)
-
-    def fixchars(self):
-        """Replace characters or strings within subtitle file."""
-        for key in Config.CHARFIXES:
-            self.project.set_search_string(key)
-            self.project.set_search_replacement(Config.CHARFIXES[key])
-            self.project.replace_all()
-
-    @property
-    def modified(self):
-        """Check whether subtitle file has been modified."""
-        return self.project.main_changed > 0
-
-    def open(self):
-        """Open the subtitle file into an Aeidon project."""
-        try:
-            self.project.open_main(self.filename)
-        except UnicodeDecodeError:
-            with open(self.filename, 'rb') as openfile:
-                encoding = get_encoding(openfile.read())
-
-            try:
-                self.project.open_main(self.filename, encoding)
-            except UnicodeDecodeError:
-                error("'%s' encountered a fatal encoding error" %
-                      self.filename)
-                sys.exit(1)
-            except:  # pylint: disable=W0702
-                open_error(self.filename)
-
-        except:  # pylint: disable=W0702
-            open_error(self.filename)
-
-    def save(self):
-        """Save subtitle file."""
-        try:
-            # ensure file is encoded properly while saving
-            self.project.main_file.encoding = 'utf_8'
-            self.project.save_main()
-            info("Saved changes to '%s'" % self.filename)
-        except:  # pylint: disable=W0702
-            error("Unable to save '%s'" % self.filename)
-            sys.exit(1)
-
-
 class AeidonProject:
 
     """Process individual subtitle files with python3-aeidon."""
@@ -122,6 +56,7 @@ class AeidonProject:
             prerequisites()
             sys.exit(1)
 
+        self.fix = Config.options.fix
         self.filename = filename
         self.project = aeidon.Project()  # pylint: disable=W0201
 
@@ -129,16 +64,19 @@ class AeidonProject:
 
         self.fixchars()
 
-        matches = self.search()
+        if not self.fix:
+            matches = self.search()
 
-        if matches:
-            Config.results = True
-            deletions = self.prompt(matches)
-            if deletions:
-                self.project.remove_subtitles(deletions)
+            if matches:
+                Config.results = True
+                deletions = self.prompt(matches)
+                if deletions:
+                    self.project.remove_subtitles(deletions)
 
         if self.modified:
             self.save()
+        elif self.fix:
+            LOGGER.info("No changes were made to '%s'", self.filename)
 
     def fixchars(self):
         """Replace characters or strings within subtitle file."""
@@ -163,8 +101,8 @@ class AeidonProject:
             try:
                 self.project.open_main(self.filename, encoding)
             except UnicodeDecodeError:
-                error("'%s' encountered a fatal encoding error" %
-                      self.filename)
+                LOGGER.error("'%s' encountered a fatal encoding error",
+                             self.filename)
                 sys.exit(1)
             except:  # pylint: disable=W0702
                 open_error(self.filename)
@@ -193,7 +131,8 @@ class AeidonProject:
                 os.system('clear')
             else:
                 if deletions or self.modified:
-                    warning("Not saving changes made to '%s'" % self.filename)
+                    LOGGER.warning("Not saving changes made to '%s'",
+                                   self.filename)
                 sys.exit(0)
 
         return deletions
@@ -204,8 +143,10 @@ class AeidonProject:
             # ensure file is encoded properly while saving
             self.project.main_file.encoding = 'utf_8'
             self.project.save_main()
+            if self.fix:
+                LOGGER.info("Saved changes to '%s'", self.filename)
         except:  # pylint: disable=W0702
-            error("Unable to save '%s'" % self.filename)
+            LOGGER.error("Unable to save '%s'", self.filename)
             sys.exit(1)
 
     def search(self):
@@ -272,8 +213,8 @@ class SrtProject:
             try:
                 self.save()
             except:
-                error("Failed to save '%s'\nConsider running '--fix' "
-                      "or use the '--aeidon' option." % self.filename)
+                LOGGER.error("Failed to save '%s'\nConsider running '--fix' "
+                             "or use the '--aeidon' option.", self.filename)
 
     def fixchars(self, text):
         """Find and replace problematic characters."""
@@ -323,7 +264,8 @@ class SrtProject:
                 os.system('clear')
             else:
                 if deletions or self.modified:
-                    warning("Not saving changes made to '%s'" % self.filename)
+                    LOGGER.warning("Not saving changes made to '%s'",
+                                   self.filename)
                 sys.exit(0)
 
         return deletions
@@ -374,25 +316,9 @@ class SrtProject:
         elif re.search('\r\n\r\n', text):
             return text.split('\r\n\r\n')
         else:
-            error("'%s' does not appear to be a 'srt' subtitle file" %
-                  self.filename)
+            LOGGER.error("'%s' does not appear to be a 'srt' subtitle file",
+                         self.filename)
             sys.exit(1)
-
-
-def error(*objs):
-    """Print error message to stderr."""
-
-    print('ERROR:', *objs, file=sys.stderr)
-
-
-def fix():
-    """Repair potentially damaged subtitle files with aeidon."""
-
-    extensions = ['ass', 'srt', 'ssa', 'sub']
-    Config.filenames = prep_files(Config.args, extensions)
-
-    for filename in Config.filenames:
-        AeidonFix(filename)
 
 
 def get_encoding(binary):
@@ -401,7 +327,7 @@ def get_encoding(binary):
     try:
         from chardet import detect
     except ImportError:
-        error("Please install the 'chardet' module")
+        LOGGER.error("Please install the 'chardet' module")
         sys.exit(1)
 
     encoding = detect(binary).get('encoding')
@@ -427,12 +353,6 @@ def getch():
         return msvcrt.getwch()
 
 
-def info(*objs):
-    """Print informational message to stderr."""
-
-    print('INFO:', *objs)
-
-
 def ismatch(text, pattern):
     """Test whether text contains string or matches regex."""
 
@@ -442,19 +362,39 @@ def ismatch(text, pattern):
         return pattern in text
 
 
+def logger():
+    """Configure program logger."""
+
+    scriptlogger = logging.getLogger(__program__)
+
+    # ensure logger is not reconfigured
+    if not scriptlogger.hasHandlers():
+
+        # set log level
+        scriptlogger.setLevel(logging.INFO)
+
+        fmt = '%(name)s:%(levelname)s: %(message)s'
+
+        # configure terminal log
+        streamhandler = logging.StreamHandler()
+        streamhandler.setFormatter(logging.Formatter(fmt))
+        scriptlogger.addHandler(streamhandler)
+
+
 def main(args=None):
     """Start application."""
 
     Config.options, Config.args = parse(args)
 
-    if Config.options.fix:
-        fix()
-        sys.exit(0)
+    logger()
 
-    if Config.options.aeidon:
+    if Config.options.aeidon or Config.options.fix:
         start_aeidon()
     else:
         start_srt()
+
+    if Config.options.fix:
+        sys.exit(0)
 
     if not Config.results:
         basenames = [os.path.basename(os.path.abspath(x)) for x in Config.args]
@@ -468,7 +408,7 @@ def main(args=None):
 
 def open_error(filename):
     """Display a generic error message upon failure to open file."""
-    error("Unable to open '%s'" % filename)
+    LOGGER.error("Unable to open '%s'", filename)
     sys.exit(1)
 
 
@@ -567,7 +507,7 @@ def prep_files(paths, extensions):
     if filenames:
         return filenames
     else:
-        error('No valid targets were specified')
+        LOGGER.error('No valid targets were specified')
         sys.exit(1)
 
 
@@ -580,13 +520,13 @@ def prep_patterns(filenames):
         try:
             patterns += [l.rstrip('\n') for l in open(filename)]
         except:  # pylint: disable=W0702
-            error("Unable to load pattern file '%s'" % filename)
+            LOGGER.error("Unable to load pattern file '%s'" % filename)
             sys.exit(1)
 
     if patterns:
         return patterns
     else:
-        error('No terms were loaded')
+        LOGGER.error('No terms were loaded')
         sys.exit(1)
 
 
@@ -603,6 +543,7 @@ def prerequisites():
     debian = "sudo apt-get install python3-aeidon"
     other = "python3 setup.py --user --without-gaupol clean install"
 
+    LOGGER.error(
     error("The aeidon module is missing!")
     stderr("\nTry '{0}' or the appropriate command for your package manager."
            .format(debian))
@@ -654,9 +595,7 @@ def start_srt():
         SrtProject(filename)
 
 
-def stderr(*objs):
-    """Print message to stderr."""
-    print(*objs, file=sys.stderr)
+LOGGER = logging.getLogger(__program__)
 
 
 def warning(*objs):
