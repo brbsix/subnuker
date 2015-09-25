@@ -539,17 +539,17 @@ def prep_regex(patterns):
 
 def prerequisites():
     """Display information about obtaining the aeidon module."""
+
     url = "http://home.gna.org/gaupol/download.html"
     debian = "sudo apt-get install python3-aeidon"
     other = "python3 setup.py --user --without-gaupol clean install"
 
     LOGGER.error(
-    error("The aeidon module is missing!")
-    stderr("\nTry '{0}' or the appropriate command for your package manager."
-           .format(debian))
-    stderr("\nYou can also download the tarball for gaupol @ {0} which "
-           "includes aeidon. After downloading, unpack and run '{1}'."
-           .format(url, other))
+        "The aeidon module is missing!\n\n"
+        "Try '{0}' or the appropriate command for your package manager.\n\n"
+        "You can also download the tarball for gaupol (which includes "
+        "aeidon) at {1}. After downloading, unpack and run '{2}'."
+        .format(debian, url, other))
 
 
 def remove_elements(target, indices):
