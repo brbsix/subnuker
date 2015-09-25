@@ -87,14 +87,8 @@ class AeidonFix:
         try:
             self.project.open_main(self.filename)
         except UnicodeDecodeError:
-            try:
-                from chardet import detect
-            except ImportError:
-                error("Please install python module 'chardet'.")
-                sys.exit(1)
-
             with open(self.filename, 'rb') as openfile:
-                encoding = detect(openfile.read()).get('encoding')
+                encoding = get_encoding(openfile.read())
 
             try:
                 self.project.open_main(self.filename, encoding)
@@ -111,6 +105,8 @@ class AeidonFix:
     def save(self):
         """Save subtitle file."""
         try:
+            # ensure file is encoded properly while saving
+            self.project.main_file.encoding = 'utf_8'
             self.project.save_main()
             info("Saved changes to '%s'" % self.filename)
         except:  # pylint: disable=W0702
@@ -164,14 +160,8 @@ class AeidonProject:
         try:
             self.project.open_main(self.filename)
         except UnicodeDecodeError:
-            try:
-                from chardet import detect
-            except ImportError:
-                error("Please install python module 'chardet'.")
-                sys.exit(1)
-
             with open(self.filename, 'rb') as openfile:
-                encoding = detect(openfile.read()).get('encoding')
+                encoding = get_encoding(openfile.read())
 
             try:
                 self.project.open_main(self.filename, encoding)
@@ -214,6 +204,8 @@ class AeidonProject:
     def save(self):
         """Save subtitle file."""
         try:
+            # ensure file is encoded properly while saving
+            self.project.main_file.encoding = 'utf_8'
             self.project.save_main()
         except:  # pylint: disable=W0702
             error("Unable to save '%s'" % self.filename)
@@ -303,8 +295,7 @@ class SrtProject:
         try:
             return binary.decode()
         except UnicodeDecodeError:
-            from chardet import detect
-            encoding = detect(binary).get('encoding')
+            encoding = get_encoding(binary)
             try:
                 return binary.decode(encoding)
             except LookupError:
@@ -403,6 +394,20 @@ def fix():
 
     for filename in Config.filenames:
         AeidonFix(filename)
+
+
+def get_encoding(binary):
+    """Return the encoding type."""
+
+    try:
+        from chardet import detect
+    except ImportError:
+        error("Please install the 'chardet' module")
+        sys.exit(1)
+
+    encoding = detect(binary).get('encoding')
+
+    return 'iso-8859-1' if encoding == 'CP949' else encoding
 
 
 def getch():
