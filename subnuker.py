@@ -331,20 +331,22 @@ class SrtProject:
 
         return deletions
 
+    def renumber(self):
+        """Re-number cells."""
+
+        num = 0
+        for cell in self.cells:
+            cell_split = cell.splitlines()
+            if len(cell_split) >= 2:
+                num += 1
+                cell_split[0] = str(num)
+                yield '\n'.join(cell_split)
+
     def save(self):
         """Format and save cells."""
 
         # re-number cells
-        newcells = []
-        num = 0
-        for cell in self.cells:
-            cell_split = cell.splitlines()
-            if len(cell_split) < 2:
-                continue
-            cell_split[0] = str(num + 1)
-            newcells.append('\n'.join(cell_split))
-            num += 1
-        self.cells = newcells
+        self.cells = list(self.renumber())
 
         # add a newline to the last line if necessary
         if not self.cells[-1].endswith('\n'):
