@@ -18,6 +18,8 @@ import sys
 __program__ = 'subnuker'
 __version__ = '0.4.2'
 
+LOGGER = logging.getLogger(__program__)
+
 
 class Config:   # pylint: disable=R0903
 
@@ -593,12 +595,3 @@ def start_srt():
 
     for filename in Config.filenames:
         SrtProject(filename)
-
-
-LOGGER = logging.getLogger(__program__)
-
-
-def warning(*objs):
-    """Print warning message to stderr."""
-
-    print('WARNING:', *objs, file=sys.stderr)
