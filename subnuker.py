@@ -11,14 +11,11 @@ subtitle files natively or other formats (ass, srt, ssa, sub) via the aeidon
 Python package.
 """
 
-__program__ = 'subnuker'
-__version__ = '0.4.2'
-
-
-# --- BEGIN CODE --- #
-
 import os
 import sys
+
+__program__ = 'subnuker'
+__version__ = '0.4.2'
 
 
 class Config:   # pylint: disable=R0903
