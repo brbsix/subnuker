@@ -38,7 +38,7 @@ https://github.com/otsaloma/gaupol/blob/master/README.aeidon.md
 Usage
 =====
 
-From the command line, run :code:`subnuker --help` to display available options.s
+From the command line, run :code:`subnuker --help` to display available options.
 
 The recommended way to scan any subtitle files (or folders containing subtitles):
 
