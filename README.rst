@@ -1,5 +1,14 @@
-About
-=====
+subnuker
+--------
+
+.. image:: https://img.shields.io/pypi/v/subnuker.svg
+  :target: https://pypi.python.org/pypi/subnuker
+
+.. image:: https://img.shields.io/pypi/l/subnuker.svg
+  :target: https://pypi.python.org/pypi/subnuker
+
+.. image:: https://img.shields.io/pypi/dm/subnuker.svg
+  :target: https://pypi.python.org/pypi/subnuker
 
 This script is intended to scan subtitle files (or folders containing subtitle files) and prompt to remove cells with advertising. Subtitle files may be searched via regular expression or plaintext. The script can handle **srt** subtitle files natively or other formats (**ass**, **srt**, **ssa**, **sub**) via the Python module **aeidon**.
 
