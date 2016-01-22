@@ -456,14 +456,15 @@ def parse(args):
         dest="regex",
         help="perform regex matching")
     parser.add_argument(
-        "--version",
-        action="version",
-        version="%s %s" % (__program__, __version__))
     parser.add_argument(
         "-y", "--yes",
         action="store_true",
         dest="autoyes",
         help="automatic yes to prompts")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%s %s" % (__program__, __version__))
     parser.add_argument(
         action="append",
         dest="targets",
