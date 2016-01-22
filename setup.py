@@ -15,7 +15,7 @@ setup(
     version=__version__,
     author='Brian Beffa',
     author_email='brbsix@gmail.com',
-    description='Remove advertising from subtitle files',
+    description='Remove spam and advertising from subtitle files',
     long_description=read('README.rst'),
     url='https://github.com/brbsix/subnuker',
     license='GPLv3',
