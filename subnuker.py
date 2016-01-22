@@ -533,7 +533,8 @@ def prep_patterns(filenames):
 
     for filename in filenames:
         try:
-            patterns += [l.rstrip('\n') for l in open(filename)]
+            with open(filename) as file:
+                patterns += [l.rstrip('\n') for l in file]
         except:  # pylint: disable=W0702
             LOGGER.error("Unable to load pattern file '%s'" % filename)
             sys.exit(1)
