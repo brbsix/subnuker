@@ -13,6 +13,7 @@ Python package.
 
 import logging
 import os
+import re
 import sys
 
 __program__ = 'subnuker'
@@ -166,9 +167,13 @@ class AeidonProject:
         """Search srt in project for cells matching term."""
 
         if Config.options.regex:
-            self.project.set_search_regex(pattern)
+            flags = re.M | re.S | \
+                (0 if Config.options.case_sensitive else re.I)
+            self.project.set_search_regex(
+                pattern, flags=flags)
         else:
-            self.project.set_search_string(pattern)
+            self.project.set_search_string(
+                pattern, ignore_case=not Config.options.case_sensitive)
 
         matches = []
 
@@ -361,9 +366,10 @@ def ismatch(text, pattern):
     """Test whether text contains string or matches regex."""
 
     if hasattr(pattern, 'search'):
-        return pattern.search(text)
+        return pattern.search(text) is not None
     else:
-        return pattern in text
+        return pattern in text if Config.options.case_sensitive \
+            else pattern.lower() in text.lower()
 
 
 def logger():
@@ -456,6 +462,11 @@ def parse(args):
         dest="regex",
         help="perform regex matching")
     parser.add_argument(
+        "-s", "--case-sensitive",
+        action="store_true",
+        default=False,
+        dest="case_sensitive",
+        help="match case-sensitively")
     parser.add_argument(
         "-y", "--yes",
         action="store_true",
@@ -538,8 +549,9 @@ def prep_patterns(filenames):
 def prep_regex(patterns):
     """Compile regex patterns."""
 
-    import re
-    return [re.compile(pattern) for pattern in patterns]
+    flags = 0 if Config.options.case_sensitive else re.I
+
+    return [re.compile(pattern, flags) for pattern in patterns]
 
 
 def prerequisites():
