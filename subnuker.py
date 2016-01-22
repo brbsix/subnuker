@@ -454,7 +454,7 @@ def parse(args):
         "-r", "--regex",
         action="store_true",
         dest="regex",
-        help="indicate use of regex matches")
+        help="perform regex matching")
     parser.add_argument(
         "--version",
         action="version",
