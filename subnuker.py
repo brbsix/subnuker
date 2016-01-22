@@ -440,7 +440,7 @@ def parse(args):
     parser.add_argument(
         "-f", "--file",
         action="append",
-        dest="file",
+        dest="pattern_files",
         help="obtain matches from FILE")
     parser.add_argument(
         "--fix",
@@ -490,8 +490,8 @@ def parse(args):
 def pattern_logic_aeidon():
     """Return patterns to be used for searching subtitles via aeidon."""
 
-    if Config.options.file:
-        return prep_patterns(Config.options.file)
+    if Config.options.pattern_files:
+        return prep_patterns(Config.options.pattern_files)
     elif Config.options.regex:
         return Config.REGEX
     else:
@@ -501,10 +501,10 @@ def pattern_logic_aeidon():
 def pattern_logic_srt():
     """Return patterns to be used for searching srt subtitles."""
 
-    if Config.options.file and Config.options.regex:
-        return prep_regex(prep_patterns(Config.options.file))
-    elif Config.options.file:
-        return prep_patterns(Config.options.file)
+    if Config.options.pattern_files and Config.options.regex:
+        return prep_regex(prep_patterns(Config.options.pattern_files))
+    elif Config.options.pattern_files:
+        return prep_patterns(Config.options.pattern_files)
     elif Config.options.regex:
         return prep_regex(Config.REGEX)
     else:
