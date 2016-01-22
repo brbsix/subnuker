@@ -539,7 +539,8 @@ def prep_patterns(filenames):
             sys.exit(1)
 
     if patterns:
-        return patterns
+        # return a set to eliminate duplicates
+        return set(patterns)
     else:
         LOGGER.error('No terms were loaded')
         sys.exit(1)
