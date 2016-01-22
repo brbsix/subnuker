@@ -17,7 +17,7 @@ import re
 import sys
 
 __program__ = 'subnuker'
-__version__ = '0.4.4'
+__version__ = '0.4.5'
 
 LOGGER = logging.getLogger(__program__)
 
