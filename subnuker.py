@@ -126,7 +126,7 @@ class AeidonProject:
 
         for match in matches:
             os.system('clear')
-            print(self.project.main_file.read()[match].main_text)
+            print(self.project.subtitles[match].main_text)
             print('----------------------------------------')
             print("Delete cell %s of '%s'?" % (str(match + 1), self.filename))
             response = getch().lower()
